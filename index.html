@@ -28,35 +28,19 @@ input {
   outline: none;
 }
 
-/* TABS */
-#tabs {
-  display: flex;
-  background: #1f1f1f;
-  padding: 6px;
-  gap: 6px;
-}
-
-.tab {
-  padding: 6px 12px;
+button {
+  padding: 6px 10px;
+  border: none;
+  border-radius: 6px;
   background: #3c4043;
-  border-radius: 10px;
-  cursor: pointer;
-  display: flex;
-  gap: 6px;
-}
-
-.tab.active {
-  background: #5f6368;
-}
-
-.tab span.close {
+  color: white;
   cursor: pointer;
 }
 
-/* IFRAME */
+/* FRAME */
 iframe {
   width: 100%;
-  height: calc(100vh - 90px);
+  height: calc(100vh - 50px);
   border: none;
 }
 </style>
@@ -64,105 +48,21 @@ iframe {
 
 <body>
 
-<div id="tabs"></div>
-
 <div class="topbar">
-  <button onclick="back()">←</button>
-  <button onclick="forward()">→</button>
-  <button onclick="reload()">⟳</button>
-
   <input id="url" placeholder="Search or enter URL">
-  <button onclick="newTab()">+</button>
-  <button onclick="fullscreen()">⛶</button>
+  <button onclick="go()">Go</button>
 </div>
 
-<div id="views"></div>
+<iframe id="frame"></iframe>
 
 <script>
-let tabs = [];
-let active = null;
-
-/* 🟦 NEW TAB */
-function newTab(url = "https://example.com") {
-  const id = Date.now();
-
-  tabs.push({ id, url, title: "New Tab" });
-
-  const tab = document.createElement("div");
-  tab.className = "tab";
-
-  const label = document.createElement("span");
-  label.innerText = "New Tab";
-
-  const close = document.createElement("span");
-  close.innerText = "✕";
-  close.className = "close";
-
-  close.onclick = (e) => {
-    e.stopPropagation();
-    closeTab(id);
-  };
-
-  tab.appendChild(label);
-  tab.appendChild(close);
-  tab.onclick = () => switchTab(id);
-
-  document.getElementById("tabs").appendChild(tab);
-
-  const view = document.createElement("iframe");
-  view.src = "/proxy?url=" + encodeURIComponent(url);
-  document.getElementById("views").appendChild(view);
-
-  switchTab(id);
-}
-
-/* 🟦 SWITCH TAB */
-function switchTab(id) {
-  active = id;
-
-  const views = document.querySelectorAll("iframe");
-  const i = tabs.findIndex(t => t.id === id);
-
-  views.forEach(v => v.style.display = "none");
-  if (views[i]) views[i].style.display = "block";
-
-  document.getElementById("url").value = tabs[i].url;
-
-  updateTabs();
-}
-
-/* 🟦 CLOSE TAB */
-function closeTab(id) {
-  const i = tabs.findIndex(t => t.id === id);
-
-  tabs.splice(i, 1);
-  document.querySelectorAll(".tab")[i].remove();
-  document.querySelectorAll("iframe")[i].remove();
-
-  if (tabs.length === 0) return newTab();
-
-  switchTab(tabs[Math.max(0, i - 1)].id);
-}
-
-/* 🟦 UPDATE ACTIVE TAB UI */
-function updateTabs() {
-  const els = document.querySelectorAll(".tab");
-
-  els.forEach((el, i) => {
-    el.classList.remove("active");
-    if (tabs[i] && tabs[i].id === active) {
-      el.classList.add("active");
-    }
-  });
-}
-
-/* 🟦 SMART URL FIX */
-function goToURL() {
+function go() {
   let input = document.getElementById("url").value.trim();
   if (!input) return;
 
   let url;
 
+  // URL detection
   if (input.startsWith("http://") || input.startsWith("https://")) {
     url = input;
   } 
@@ -170,55 +70,21 @@ function goToURL() {
     url = "https://" + input;
   } 
   else {
-    url = "https://duckduckgo.com/?q=" + encodeURIComponent(input);
+    // ✅ WORKING search engine (does NOT get blocked)
+    url = "https://html.duckduckgo.com/html/?q=" + encodeURIComponent(input);
   }
 
-  const i = tabs.findIndex(t => t.id === active);
-  tabs[i].url = url;
-
-  const views = document.querySelectorAll("iframe");
-  if (views[i]) {
-    views[i].src = "/proxy?url=" + encodeURIComponent(url);
-  }
+  // ✅ THIS IS THE KEY FIX (uses your proxy)
+  document.getElementById("frame").src =
+    "/proxy?url=" + encodeURIComponent(url);
 }
 
-/* 🟦 ENTER KEY */
-window.addEventListener("DOMContentLoaded", () => {
-  document.getElementById("url").addEventListener("keydown", (e) => {
-    if (e.key === "Enter") {
-      goToURL();
-    }
-  });
+// Enter key support
+document.getElementById("url").addEventListener("keydown", (e) => {
+  if (e.key === "Enter") {
+    go();
+  }
 });
-
-/* 🟦 NAVIGATION (iframe-safe) */
-function back() {
-  const v = getView();
-  if (v) v.contentWindow.history.back();
-}
-
-function forward() {
-  const v = getView();
-  if (v) v.contentWindow.history.forward();
-}
-
-function reload() {
-  const v = getView();
-  if (v) v.contentWindow.location.reload();
-}
-
-function getView() {
-  const i = tabs.findIndex(t => t.id === active);
-  return document.querySelectorAll("iframe")[i];
-}
-
-/* 🟦 FULLSCREEN (browser version) */
-function fullscreen() {
-  document.documentElement.requestFullscreen();
-}
-
-/* START */
-newTab();
 </script>
 
 </body>
