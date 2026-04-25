@@ -1,16 +1,12 @@
 {
   "name": "proxy-site",
   "version": "1.0.0",
-  "description": "",
-  "main": "main.js",
+  "main": "server.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node server.js"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "type": "commonjs",
   "dependencies": {
-    "electron": "^41.3.0"
+    "express": "^5.0.0",
+    "http-proxy-middleware": "^3.0.0"
   }
 }
